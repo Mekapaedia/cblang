@@ -1,0 +1,84 @@
+stmts -> stmt morestmts.
+morestmts -> stmts
+|.
+stmt -> innerstmt endstmt.
+endstmt -> ;.
+innerstmt -> decl
+| expr
+| if cond block elseif endif
+| while cond block
+| return expr
+| specialid ident { decl endblock.
+block -> { morestmts endblock.
+endblock -> }.
+decl -> type moredecl anotherdecl.
+moredecl -> ptr declname funcdel enddecl.
+ptr -> $ ptr
+|.
+funcdel -> ( args endargs block
+|.
+args -> decl
+|.
+endargs -> ).
+declname -> ident.
+enddecl -> arr assign
+|.
+assign -> = expr.
+arr -> [ const morearr.
+morearr -> , const morearr
+| ].
+anotherdecl -> , decl
+|.
+cond -> ( expr endcond.
+endcond -> ).
+elseif -> elif cond block elseif
+|.
+endif -> else block
+|.
+expr -> unop basename
+| basename morexpr
+| ( expr moreparens.
+moreparens -> ).
+basename-> name expr'.
+morexpr -> binop expr
+|.
+name -> ident
+| const.
+expr' -> arrexpr expr'
+| funcall expr'
+|.
+funcall -> ( expr morecall.
+morecall -> , expr morecall
+| ).
+arrexpr -> [ expr endarr.
+endarr -> , expr endarr
+| ].
+unop -> &
+| $
+| !
+| ~
+| cast.
+cast -> casttype morecast.
+casttype -> s
+| 0
+| 1.
+morecast -> openparen endcast.
+openparen -> (.
+endcast -> type ).
+binop -> -
+| +
+| /
+| *
+| OR
+| AND
+| XOR
+| BOR
+| BAND
+| BXOR
+| >>
+| <<
+| ==
+| >
+| >=
+| <
+| <=.
