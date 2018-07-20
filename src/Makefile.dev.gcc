@@ -1,0 +1,28 @@
+CC=gcc
+DEVFLAGS=-std=c99 -g2 -ggdb3 -pg -Og -Wall -Wextra -ansi -pedantic -Wdeclaration-after-statement \
+-Wshadow -Wpointer-arith -Wpedantic -Wcast-qual -Wstrict-prototypes -Wmissing-prototypes \
+-Wno-missing-braces -Wno-missing-field-initializers -Wformat=2 -Wswitch-default -Wswitch-enum \
+-Wcast-align -Wbad-function-cast -fstrict-overflow -Wstrict-overflow=5 -Winline -Wundef \
+-Wnested-externs -Wunreachable-code -Wlogical-op -Wfloat-equal -Wredundant-decls \
+-Wold-style-definition -Wwrite-strings -Wdouble-promotion -fno-omit-frame-pointer \
+-ffloat-store -fno-common -fstrict-aliasing -fprofile-arcs -ftest-coverage \
+-Wp,-D_FORTIFY_SOURCE=2 -Wformat-signedness -Winit-self -Wpacked -Wmissing-declarations \
+-Wmissing-format-attribute -Wmissing-noreturn -Wsign-compare -Wunsafe-loop-optimizations \
+-Werror-implicit-function-declaration -Wmissing-include-dirs -Wmissing-field-initializers \
+-Wvolatile-register-var -Wdisabled-optimization -Wsign-conversion -Wno-long-long \
+-Winvalid-pch -Wunused-result -fdelete-null-pointer-checks  -Wunused -Wunused-parameter \
+-Wuninitialized -Wstrict-aliasing=3 -Warray-bounds=2 -Wconversion -Wparentheses \
+-Wjump-misses-init -Wno-multichar -Wnormalized -Wpadded -Wvla -Wmisleading-indentation
+CFLAGS=$(DEVFLAGS) $(EXTRACFLAGS) -c
+LDFLAGS=$(DEVFLAGS) $(EXTRALDFLAGS) -lgcov
+OBJ=$(SRC:.c=.o)
+all: $(SRC) $(EXE)
+
+$(EXE): $(OBJ)
+	$(CC) $(OBJ) -o $@ $(LDFLAGS)
+
+lex.c: lex.re
+	re2c -W lex.re -o lex.c
+
+%.o: %.c
+	$(CC) $(CFLAGS) $< -o $@

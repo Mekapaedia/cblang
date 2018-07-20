@@ -1,0 +1,16 @@
+CC=gcc
+FASTFLAGS=-O2 -s -march=native -fomit-frame-pointer -pipe -Wdisabled-optimization -flto
+CFLAGS=$(FASTFLAGS) $(EXTRACFLAGS) -c
+LDFLAGS=$(FASTFLAGS) $(EXTRALDFLAGS)
+OBJ=$(SRC:.c=.o)
+
+all: $(SRC) $(EXE)
+
+$(EXE): $(OBJ)
+	$(CC) $(OBJ) -o $@ $(LDFLAGS)
+
+lex.c: lex.re
+	re2c lex.re -o lex.c
+
+%.o: %.c
+	$(CC) $(CFLAGS) $< -o $@
