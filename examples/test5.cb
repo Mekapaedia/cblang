@@ -1,0 +1,4 @@
+c blah = 'd';
+c *blah2 = "blahs blahs";
+c blah3 = '\n';
+c *blah4 = "blasdas \" blash \" ";

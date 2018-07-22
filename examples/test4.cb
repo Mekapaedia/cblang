@@ -1,0 +1,12 @@
+struct bepis
+{
+	w henlo;
+	p jenlo;
+};
+
+w jenbo()
+{
+	bepis pepis;
+	pepis.henlo = -4;
+	pepis.jenlo = 55;
+};

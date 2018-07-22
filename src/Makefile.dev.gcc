@@ -24,5 +24,8 @@ $(EXE): $(OBJ)
 lex.c: lex.re
 	re2c -W lex.re -o lex.c
 
+parse.c: parse.g
+	LLnextgen parse.g
+
 %.o: %.c
 	$(CC) $(CFLAGS) $< -o $@

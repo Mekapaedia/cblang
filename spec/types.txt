@@ -1,0 +1,10 @@
+w: Standard signed word for the platform
+p: Standard unsigned pointer size for the platform
+c: Standard char size for the platform
+v: Void type
+si###: Signed integer with specified size in bits
+ui###: Unsigned integer with specified size in bits
+df###: Decimal float with specified size in bits
+bf###: Binary float with specified size in bits
+sf###.###: Signed fixed point type with specified integer and fraction components of specified size in bits
+uf###.###: Unsigned fixed point type with specified integer and fraction components of specified size in bits

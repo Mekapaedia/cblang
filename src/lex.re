@@ -1,8 +1,16 @@
 #include "cbc.h"
 
 #define RETINC (int)(YYCURSOR-YYSTART)
+#define IDORTYPE (NEXTSPEC ? TYPE : ID)
+int NEXTSPEC = 0;
 
 static int lexer(lexed *nextlex, const char *YYCURSOR);
+void getintval(lexed *lexeme, const char *YYSTART, const char *YYCURSOR);
+void getfloatval(lexed *lexeme, const char *YYSTART, const char *YYCURSOR);
+void getstr(lexed *lexeme, const char *YYSTART, const char *YYCURSOR);
+void getid(lexed *lexeme, const char *YYSTART, const char *YYCURSOR);
+void gettype(lexed *lexeme, const char *YYSTART, const char *YYCURSOR);
+char *convstrgen(const char *YYSTART, const char *YYCURSOR, char trim);
 
 int lex(lexed *lexlist, char *input, size_t inputlen)
 {
@@ -16,6 +24,14 @@ int lex(lexed *lexlist, char *input, size_t inputlen)
 	while(i < inputlen)
 	{
 		unsigned int newi = i;
+		lexlist[lexnum].type = -1;
+		lexlist[lexnum].typesize = -1;
+		lexlist[lexnum].ptrlvl = -1;
+		lexlist[lexnum].idname = NULL;
+		lexlist[lexnum].idtag = -1;
+		lexlist[lexnum].val.strval = NULL;
+		lexlist[lexnum].signedness = -1;
+		lexlist[lexnum].fracsize = -1;
 		lexret = lexer(&lexlist[lexnum], &input[i]);
 		lexlist[lexnum].line = line;
 		lexlist[lexnum].character = character;
@@ -61,11 +77,11 @@ static int lexer(lexed *nextlex, const char *YYCURSOR)
 		ws = [\n\r\t\v\f ]*;
 		end = "\x00";
 		
-		type = "si" [0-9]{1,3} | "ui" [0-9]{1,3} | "bf" [0-9]{1,3} | "df" [0-9]{1,3} | "p" | "w" | "c" | "f" ;
+		type = "uf" [0-9]{1,3} "." [0-9]{1,3} | "sf" [0-9]{1,3} "." [0-9]{1,3} | "si" [0-9]{1,3} | "ui" [0-9]{1,3} | "bf" [0-9]{1,3} | "df" [0-9]{1,3} | "p" | "w" | "c" | "f" ;
 		id = [a-zA-Z] [a-zA-Z0-9_-]*;
-		int = [0-9]+;
+		int = "-"? [0-9]+;
 		float = [0-9]+ "." [0-9]+;
-		char = "'" [a-zA-Z] "'" | "'" "\\" [a-zA-Z0-9] "'";
+		char = "\"" ([^"]|[\\] ["])* "\"" | "'" "\\"? [a-zA-Z0-9] "'";
 		string = "\"" [^"]* "\"";
 
 		* { nextlex->lexeme = UNKNOWN; return -RETINC; }
@@ -104,21 +120,229 @@ static int lexer(lexed *nextlex, const char *YYCURSOR)
 		ws ">=" ws { nextlex->lexeme = GE; return RETINC; }
 		ws "<" ws { nextlex->lexeme = LT; return RETINC; }
 		ws "<=" ws { nextlex->lexeme = LE; return RETINC; }
+		ws "$" ws { nextlex->lexeme = DLRSGN; return RETINC; }
 		ws "if" ws { nextlex->lexeme = IF; return RETINC; }
 		ws "elif" ws { nextlex->lexeme = ELIF; return RETINC; }
 		ws "else" ws { nextlex->lexeme = ELSE; return RETINC; }
 		ws "while" ws { nextlex->lexeme = WHILE; return RETINC; }
 		ws "return" ws { nextlex->lexeme = RET; return RETINC; }
-		ws "struct" ws { nextlex->lexeme = STRUCT; return RETINC; }
-		ws "union" ws { nextlex->lexeme = UNION; return RETINC; }
+		ws "break" ws { nextlex->lexeme = BREAK; return RETINC; }
+		ws "continue" ws { nextlex->lexeme = CONTINUE; return RETINC; }
+		ws "struct" ws { nextlex->lexeme = STRUCT; NEXTSPEC = 1; return RETINC; }
+		ws "union" ws { nextlex->lexeme = UNION; NEXTSPEC = 1; return RETINC; }
 		ws "=" ws { nextlex->lexeme = ASSIGN; return RETINC; }
-		ws type ws { nextlex->lexeme = TYPE; return RETINC; }
-		ws id ws { nextlex->lexeme = ID; return RETINC; }
-		ws int ws { nextlex->lexeme = INT; return RETINC; }
-		ws float ws { nextlex->lexeme = FLOAT; return RETINC; }
-		ws char ws { nextlex->lexeme = CHAR; return RETINC; }
-		ws string ws  { nextlex->lexeme = CHAR; return RETINC; }
+		ws type ws { nextlex->lexeme = TYPE; gettype(nextlex, YYSTART, YYCURSOR); return RETINC; }
+		ws id ws { nextlex->lexeme = IDORTYPE; getid(nextlex, YYSTART, YYCURSOR); return RETINC; }
+		ws int ws { nextlex->lexeme = INT; getintval(nextlex, YYSTART, YYCURSOR); return RETINC; }
+		ws float ws { nextlex->lexeme = FLOAT; getfloatval(nextlex, YYSTART, YYCURSOR); return RETINC; }
+		ws char ws { nextlex->lexeme = CHAR; getstr(nextlex, YYSTART, YYCURSOR); return RETINC; }
+		ws string ws  { nextlex->lexeme = CHAR; getstr(nextlex, YYSTART, YYCURSOR); return RETINC; }
 	*/
 }
 
+char *convstrgen(const char *YYSTART, const char *YYCURSOR, char trim)
+{
+	char *strcur = YYSTART;
+	char *convstr = NULL;
+	int i = 0;
+	
+	if(YYSTART == NULL || YYCURSOR == NULL)
+	{
+		return NULL;
+	}
+	convstr = malloc(sizeof(char)*(YYCURSOR-YYSTART+1));
+	if(convstr == NULL)
+	{
+		perror("Error allocating memory");
+		return NULL;
+	}
+	if(trim == 2)
+	{
+		strcur++;
+	}
+	while(strcur < YYCURSOR)
+	{
+		if((trim == 1) && (*strcur == ' ' || *strcur == '\n' || *strcur == '\r' || *strcur == '\t' || *strcur == '\v' || *strcur == '\f'))
+		{
+			strcur++;
+			continue;
+		}
+		convstr[i] = *strcur;
+		strcur++;
+		i++;
+	}
+	convstr[i] = '\0';
+	if(trim == 2)
+	{
+		convstr[i-1] = '\0';
+	}
+	return convstr;
+}
+
+void getintval(lexed *lexeme, const char *YYSTART, const char *YYCURSOR)
+{
+	char *convstr = NULL;
+
+	convstr = convstrgen(YYSTART, YYCURSOR, 1);
+	if(convstr == NULL)
+	{
+		return;
+	}
+	lexeme->signedness = 1;
+	lexeme->val.intval = strtol(convstr, NULL, 10);
+	free(convstr);
+}
+
+void getfloatval(lexed *lexeme, const char *YYSTART, const char *YYCURSOR)
+{
+	char *convstr = NULL;
+
+	convstr = convstrgen(YYSTART, YYCURSOR, 1);
+	if(convstr == NULL)
+	{
+		return;
+	}
+	lexeme->val.floatval = strtod(convstr, NULL);
+	free(convstr);
+
+}
+
+void getstr(lexed *lexeme, const char *YYSTART, const char *YYCURSOR)
+{
+	char *convstr = NULL;
+
+	convstr = convstrgen(YYSTART, YYCURSOR, 2);
+	if(convstr == NULL)
+	{
+		return;
+	}
+	lexeme->val.strval = convstr;
+}
+
+void getid(lexed *lexeme, const char *YYSTART, const char *YYCURSOR)
+{
+	char *convstr = NULL;
+
+	convstr = convstrgen(YYSTART, YYCURSOR, 1);
+	if(convstr == NULL)
+	{
+		return;
+	}
+	lexeme->idname = convstr;
+	if(NEXTSPEC == 1)
+	{
+		lexeme->type = SP;
+		NEXTSPEC = 0;
+	}
+
+}
+
+void gettype(lexed *lexeme, const char *YYSTART, const char *YYCURSOR)
+{
+	char *strcur = YYSTART;
+	while((*strcur == ' ' || *strcur == '\n' || *strcur == '\r' || *strcur == '\t' || *strcur == '\v' || *strcur == '\f') && strcur < YYCURSOR)
+	{
+		strcur++;
+	}
+	if(strcur == YYCURSOR)
+	{
+		return;
+	}
+	if(*strcur == 'p')
+	{
+		lexeme->type = P;
+		lexeme->typesize = PSIZE;
+	}
+	else if(*strcur == 'w')
+	{
+		lexeme->type = W;
+		lexeme->typesize = WSIZE;
+	}
+	else if(*strcur == 'c')
+	{
+		lexeme->type = C;
+		lexeme->typesize = CSIZE;
+	}
+	else if(*strcur == 'f')
+	{
+		lexeme->type = F;
+		lexeme->typesize = FSIZE;
+	}
+	else if(*strcur == 'v')
+	{
+		lexeme->type = V;
+	}
+	else if((*strcur == 's' || *strcur == 'u') && *(strcur+1) == 'f')
+	{
+		char *convstri = NULL;
+		char *convstrf = NULL;
+		char *dotcur = strcur+2;
+		while(dotcur < YYCURSOR)
+		{
+			if(*dotcur == '.')
+			{
+				break;
+			}
+			dotcur++;
+		}
+		
+		convstri = convstrgen(strcur+2, dotcur, 1);
+		if(convstri == NULL)
+		{
+			return;
+		}
+		convstrf = convstrgen(dotcur+1, YYCURSOR, 1);
+		if(convstrf == NULL)
+		{
+			return;
+		}
+
+		lexeme->typesize = strtol(convstri, NULL, 10);
+		lexeme->fracsize = strtol(convstrf, NULL, 10);
+		
+		if(*strcur == 's')
+		{
+			lexeme->type = SF;
+		}
+		else if(*strcur == 'u')
+		{
+			lexeme->type = UF;
+		}
+		free(convstri);
+		free(convstrf);
+	}
+	else
+	{
+		char *convstr = NULL;
+		convstr = convstrgen(strcur+2, YYCURSOR, 1);
+		if(convstr == NULL)
+		{
+			return;
+		}
+		if(*strcur == 's' && *(strcur+1) == 'i')
+		{
+			lexeme->type = SI;
+			lexeme->typesize = strtol(convstr, NULL, 10);
+		}
+		else if(*strcur == 'u' && *(strcur+1) == 'i')
+		{
+
+			lexeme->type = UI;
+			lexeme->typesize = strtol(convstr, NULL, 10);
+		}
+		else if(*strcur == 'b' && *(strcur+1) == 'f')
+		{
+
+			lexeme->type = BF;
+			lexeme->typesize = strtol(convstr, NULL, 10);
+		}
+		else if(*strcur == 'd' && *(strcur+1) == 'f')
+		{
+
+			lexeme->type = DF;
+			lexeme->typesize = strtol(convstr, NULL, 10);
+		}
+		free(convstr);
+	}
+}
 /* vim: set ft=c: */

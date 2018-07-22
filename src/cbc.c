@@ -1,5 +1,8 @@
 #include "cbc.h"
 
+lexed *LEXLIST;
+int LEXPOS = 0;
+
 int main(int argc, char **argv) 
 {
 	if(argc < 2)
@@ -76,7 +79,8 @@ int main(int argc, char **argv)
 			{
 				lexprint(&lexedlist[i]);
 			}
-
+			LEXLIST = lexedlist;
+			parser();
 			free(lexedlist);
 		}
 		else
@@ -285,30 +289,135 @@ void lexprint(lexed *lexeme)
 	}
 	else if(lexeme->lexeme == TYPE)
 	{
-		puts("TYPE");
+		printf("TYPE: ");
+		if(lexeme->ptrlvl > 0)
+		{
+			int i = 0;
+			for(i = 0; i < lexeme->ptrlvl; i++)
+			{
+				printf("PTR ");
+			}
+		}
+		if(lexeme->type == P)
+		{
+			printf("P");
+		}
+		else if(lexeme->type == W)
+		{
+			printf("W");
+		}
+		else if(lexeme->type == C)
+		{
+			printf("C");
+		}
+		else if(lexeme->type == F)
+		{
+			printf("F");
+		}
+		else if(lexeme->type == V)
+		{
+			printf("V");
+		}
+		else
+		{
+			if(lexeme->type == SI)
+			{
+				printf("SI: %d", lexeme->typesize);
+			}
+			else if(lexeme->type == UI)
+			{
+				printf("UI: %d", lexeme->typesize);
+			}
+			else if(lexeme->type == BF)
+			{
+				printf("BF: %d", lexeme->typesize);
+			}
+			else if(lexeme->type == DF)
+			{
+				printf("DF: %d", lexeme->typesize);
+			}
+			else if(lexeme->type == UF)
+			{
+				printf("UF %d.%d", lexeme->typesize, lexeme->fracsize);
+			}
+			else if(lexeme->type == SF)
+			{
+				printf("SF %d.%d", lexeme->typesize, lexeme->fracsize);
+			}
+			else if(lexeme->type == SP)
+			{
+				if(lexeme->idname != NULL)
+				{
+					printf("SP: %s", lexeme->idname);
+				}
+				else
+				{
+					printf("SP: ERR");
+				}
+			}
+			else
+			{
+				printf("ERR");
+			}
+		}
+		puts("");
 	}
 	else if(lexeme->lexeme == ID)
 	{
-		puts("IDENT");
-	}
-	else if(lexeme->lexeme == TYPE)
-	{
-		puts("TYPE");
+		if(lexeme->idname != NULL)
+		{
+			printf("IDENT: %s\n", lexeme->idname);
+		}
+		else
+		{
+			printf("IDENT: ERR\n");
+		}
 	}
 	else if(lexeme->lexeme == INT)
 	{
-		puts("INT");
+		if(lexeme->signedness == 0)
+		{
+			printf("INT: %lu\n", lexeme->val.uintval);
+		}
+		else if(lexeme->signedness == 1)
+		{
+			printf("INT: %ld\n", lexeme->val.intval);
+		}
+		else
+		{
+			printf("INT: ERR\n");
+		}
 	}
 	else if(lexeme->lexeme == FLOAT)
 	{
-		puts("FLOAT");
+		printf("FLOAT: %f\n", lexeme->val.floatval);
 	}
 	else if(lexeme->lexeme == CHAR)
 	{
-		puts("CHAR");
+		if(lexeme->val.strval != NULL)
+		{
+			printf("CHAR: %s\n", lexeme->val.strval);
+		}
+		else
+		{
+			printf("CHAR: ERR\n");
+		}
 	}
 	else
 	{
 		puts("ERR: UUNKNOWN");
 	}
+}
+
+int yylex(void)
+{
+	if(LEXLIST[LEXPOS].lexeme == EOTEXT)
+	{
+		return 0;
+	}
+	else
+	{
+		return LEXLIST[LEXPOS++].lexeme + 256;
+	}
+	return -1;
 }
