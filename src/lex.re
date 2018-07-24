@@ -1,8 +1,9 @@
 #include "cbc.h"
 
 #define RETINC (int)(YYCURSOR-YYSTART)
-#define IDORTYPE (NEXTSPEC ? TYPE : ID)
 int NEXTSPEC = 0;
+char **SPECIALTYPELIST = NULL;
+int SPECIALTYPENUM = 0;
 
 static int lexer(lexed *nextlex, const char *YYCURSOR);
 void getintval(lexed *lexeme, const char *YYSTART, const char *YYCURSOR);
@@ -19,7 +20,13 @@ int lex(lexed *lexlist, char *input, size_t inputlen)
 	int lexret = 0;
 	int character = 1;
 	int line = 1;
-
+	
+	SPECIALTYPELIST = malloc(sizeof(char *) * 1);
+	if(SPECIALTYPELIST == NULL)
+	{
+		perror("Memory allocation error");
+		return -1;
+	}
 	for(i = 0; i < inputlen; i++)
 	while(i < inputlen)
 	{
@@ -81,8 +88,8 @@ static int lexer(lexed *nextlex, const char *YYCURSOR)
 		id = [a-zA-Z] [a-zA-Z0-9_-]*;
 		int = "-"? [0-9]+;
 		float = [0-9]+ "." [0-9]+;
-		char = "\"" ([^"]|[\\] ["])* "\"" | "'" "\\"? [a-zA-Z0-9] "'";
-		string = "\"" [^"]* "\"";
+		char = "'" "\\"? [a-zA-Z0-9]{1,1} "'";
+		string = "\"" ([^"]|[\\] ["])* "\"";
 
 		* { nextlex->lexeme = UNKNOWN; return -RETINC; }
 		end	{ nextlex->lexeme = EOTEXT; return RETINC; }
@@ -132,7 +139,7 @@ static int lexer(lexed *nextlex, const char *YYCURSOR)
 		ws "union" ws { nextlex->lexeme = UNION; NEXTSPEC = 1; return RETINC; }
 		ws "=" ws { nextlex->lexeme = ASSIGN; return RETINC; }
 		ws type ws { nextlex->lexeme = TYPE; gettype(nextlex, YYSTART, YYCURSOR); return RETINC; }
-		ws id ws { nextlex->lexeme = IDORTYPE; getid(nextlex, YYSTART, YYCURSOR); return RETINC; }
+		ws id ws { nextlex->lexeme = ID; getid(nextlex, YYSTART, YYCURSOR); return RETINC; }
 		ws int ws { nextlex->lexeme = INT; getintval(nextlex, YYSTART, YYCURSOR); return RETINC; }
 		ws float ws { nextlex->lexeme = FLOAT; getfloatval(nextlex, YYSTART, YYCURSOR); return RETINC; }
 		ws char ws { nextlex->lexeme = CHAR; getstr(nextlex, YYSTART, YYCURSOR); return RETINC; }
@@ -142,7 +149,7 @@ static int lexer(lexed *nextlex, const char *YYCURSOR)
 
 char *convstrgen(const char *YYSTART, const char *YYCURSOR, char trim)
 {
-	char *strcur = YYSTART;
+	const char *strcur = YYSTART;
 	char *convstr = NULL;
 	int i = 0;
 	
@@ -150,7 +157,7 @@ char *convstrgen(const char *YYSTART, const char *YYCURSOR, char trim)
 	{
 		return NULL;
 	}
-	convstr = malloc(sizeof(char)*(YYCURSOR-YYSTART+1));
+	convstr = malloc(sizeof(char)*(size_t)(YYCURSOR-YYSTART+1));
 	if(convstr == NULL)
 	{
 		perror("Error allocating memory");
@@ -222,6 +229,7 @@ void getstr(lexed *lexeme, const char *YYSTART, const char *YYCURSOR)
 void getid(lexed *lexeme, const char *YYSTART, const char *YYCURSOR)
 {
 	char *convstr = NULL;
+	int i = 0;
 
 	convstr = convstrgen(YYSTART, YYCURSOR, 1);
 	if(convstr == NULL)
@@ -232,14 +240,35 @@ void getid(lexed *lexeme, const char *YYSTART, const char *YYCURSOR)
 	if(NEXTSPEC == 1)
 	{
 		lexeme->type = SP;
+		SPECIALTYPELIST[SPECIALTYPENUM] = convstr;
+		SPECIALTYPELIST = realloc(SPECIALTYPELIST, sizeof(char *) * (SPECIALTYPENUM + 1));
+		if(SPECIALTYPELIST == NULL)
+		{
+			perror("Memory allocation error");
+			return;
+		}
+		SPECIALTYPENUM++;
 		NEXTSPEC = 0;
 	}
-
+	else
+	{
+		for(i = 0; i < SPECIALTYPENUM; i++)
+		{
+			if(!strcmp(convstr, SPECIALTYPELIST[i]))
+			{
+				lexeme->type = SP;
+				lexeme->lexeme = TYPE;
+				free(convstr);
+				lexeme->idname = SPECIALTYPELIST[i];
+				break;		
+			}
+		}
+	}
 }
 
 void gettype(lexed *lexeme, const char *YYSTART, const char *YYCURSOR)
 {
-	char *strcur = YYSTART;
+	const char *strcur = YYSTART;
 	while((*strcur == ' ' || *strcur == '\n' || *strcur == '\r' || *strcur == '\t' || *strcur == '\v' || *strcur == '\f') && strcur < YYCURSOR)
 	{
 		strcur++;
@@ -276,7 +305,7 @@ void gettype(lexed *lexeme, const char *YYSTART, const char *YYCURSOR)
 	{
 		char *convstri = NULL;
 		char *convstrf = NULL;
-		char *dotcur = strcur+2;
+		const char *dotcur = strcur+2;
 		while(dotcur < YYCURSOR)
 		{
 			if(*dotcur == '.')

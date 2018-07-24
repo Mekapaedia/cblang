@@ -28,7 +28,6 @@ int main(int argc, char **argv)
 			size_t buflen = 0;
 			lexed *lexedlist = NULL;
 			int lexret = 0;
-			int i = 0;
 
 			file = fopen(argv[1], "r");
 			if(file == NULL)
@@ -75,10 +74,6 @@ int main(int argc, char **argv)
 				return 1;
 			}
 
-			for(i = 0; i < lexret; i++)
-			{
-				lexprint(&lexedlist[i]);
-			}
 			LEXLIST = lexedlist;
 			parser();
 			free(lexedlist);
@@ -377,11 +372,11 @@ void lexprint(lexed *lexeme)
 	{
 		if(lexeme->signedness == 0)
 		{
-			printf("INT: %lu\n", lexeme->val.uintval);
+			printf("INT: %lu\n", (long unsigned) lexeme->val.uintval);
 		}
 		else if(lexeme->signedness == 1)
 		{
-			printf("INT: %ld\n", lexeme->val.intval);
+			printf("INT: %ld\n", (long int) lexeme->val.intval);
 		}
 		else
 		{
@@ -411,6 +406,7 @@ void lexprint(lexed *lexeme)
 
 int yylex(void)
 {
+	lexprint(&LEXLIST[LEXPOS]);
 	if(LEXLIST[LEXPOS].lexeme == EOTEXT)
 	{
 		return 0;

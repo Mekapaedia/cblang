@@ -1,0 +1,4 @@
+while(a == 2) : this_while
+{
+	a = a - 1;
+};

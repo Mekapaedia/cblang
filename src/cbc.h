@@ -98,6 +98,8 @@ typedef union _idval
 	char *strval;
 } idval;
 
+/* TODO: better rewrite with two uint64_t for all types */
+
 typedef struct _lexed
 {
 	int lexeme;

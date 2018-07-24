@@ -1,0 +1,16 @@
+w bleh(w ab, p bb);
+
+w bleh(w ab, p bb)
+{
+	if(ab > 20)
+	{
+		return bb;
+	};
+	w fb = ab + 3;
+	bleh(fb, bb);
+};
+
+w main()
+{
+	bleh(1, 3);
+};

@@ -8,7 +8,7 @@ innerstmt -> decl
 | if cond block elseif endif
 | while cond optanchor block
 | return expr
-| specialid ident { decl endblock
+| specialid ident block
 | break anchor
 | continue anchor.
 optanchor -> : anchor
@@ -31,10 +31,11 @@ fwddecl -> block
 |.
 endargs -> ).
 declname -> ident.
-enddecl -> arr assign
+enddecl -> arr assign.
+assign -> = expr
 |.
-assign -> = expr.
-arr -> [ const morearr.
+arr -> [ const morearr
+|.
 morearr -> , const morearr
 | ].
 anotherdecl -> , decl
@@ -45,13 +46,13 @@ elseif -> elif cond block elseif
 |.
 endif -> else block
 |.
-expr -> unop basename
-| basename morexpr
-| ( expr moreparens.
+expr -> term more
+| ( expr moreparens more.
 moreparens -> ).
-basename-> name expr'.
-morexpr -> binop expr
+more -> binop expr
 |.
+term -> unop term
+| name expr'.
 name -> ident
 | const.
 expr' -> arrexpr expr'
@@ -90,10 +91,9 @@ binop -> -
 | BXOR
 | >>
 | <<
-| ))
-| ((
 | ==
 | >
 | >=
 | <
-| <=.
+| <=
+| =.

@@ -1,0 +1,14 @@
+struct dunlo
+{
+	w bepis;
+};
+
+
+w henlo() 
+{
+	w jenlo = 0;
+	if(jenlo == 0)
+	{
+		jenlo = 5;
+	};
+};
