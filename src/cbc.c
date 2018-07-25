@@ -2,6 +2,7 @@
 
 lexed *LEXLIST;
 int LEXPOS = 0;
+syntax AST;
 
 int main(int argc, char **argv) 
 {
@@ -75,7 +76,11 @@ int main(int argc, char **argv)
 			}
 
 			LEXLIST = lexedlist;
+			AST.stmts = malloc(sizeof(syntax));
+			AST.numstmts = 0;
 			parser();
+			puts("");
+			astprint(&AST, 0);
 			free(lexedlist);
 		}
 		else
@@ -416,4 +421,22 @@ int yylex(void)
 		return LEXLIST[LEXPOS++].lexeme + 256;
 	}
 	return -1;
+}
+
+void astprint(syntax *stmt, int tab)
+{
+	int i = 0;
+	for(i = 0; i < tab; i++)
+	{
+		printf("\t");
+	}
+	puts("stmt");
+	if(stmt->stmts != NULL)
+	{
+		int j = 0;
+		for(j = 0; j < stmt->numstmts; j++)
+		{
+			astprint(&stmt->stmts[j], tab+1);
+		}
+	}
 }

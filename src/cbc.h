@@ -115,10 +115,19 @@ typedef struct _lexed
 	int character;
 } lexed;
 
+typedef struct _syntax
+{
+	struct _syntax *stmts;
+	int numstmts;
+} syntax;
+
 void help(const char *name);
 void ver(void);
 int lex(lexed *lexlist, char *input, size_t inputlen);
 void lexprint(lexed *lexeme);
 int yylex(void);
+void astprint(syntax *stmt, int tab);
+
+extern syntax AST;
 
 #endif /* _CBC_H_ */

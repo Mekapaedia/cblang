@@ -3,318 +3,305 @@
 %options "generate-lexer-wrapper generate-llmessage generate-symbol-table";
 %top {
 #include "cbc.h"
+void pushp(const char* str) 
+{
+	puts(str);
+	fflush(stdout);
+}
 
-
+void addstmt(void) 
+{
+	AST.stmts = realloc(AST.stmts, sizeof(struct _syntax) * (AST.numstmts+1));
+	if(AST.stmts == NULL)
+	{
+		perror("Error allocating memory");
+	}
+	AST.stmts[AST.numstmts].stmts = NULL;
+	AST.stmts[AST.numstmts].numstmts = 0;
+	AST.numstmts++;
+}
 
 }
 
 
 stmts : 
+	{pushp("stmts");}
 	stmt morestmts
-	{puts("stmts");}
 ;
 
 morestmts :
+	{pushp("morestmts");}
 	stmts
-	{puts("morestmts");}
-	|
+	| {pushp("morestmts-e");}
 ;
 
 stmt : 
+	{pushp("stmt");}
 	innerstmt endstmt
-	{puts("stmt");}
 ;
 
 endstmt : 
+	{pushp("endstmt");}
 	LLSMICLN
-	{puts("endstmt");}
 ;
 
 innerstmt : 
-	decl
-	{puts("innerstmt");}
-	| expr
-	{puts("innerstmt");}
-	| LLIF cond block elseif endif
-	{puts("innerstmt");}
-	| LLWHILE cond optanchor block
-	{puts("innerstmt");}
-	| LLRET expr
-	{puts("innerstmt");}
-	| LLSTRUCT LLID block
-	{puts("innerstmt");}
-	| LLUNION LLID block
-	{puts("innerstmt");}
-	| LLBREAK anchor
-	{puts("innerstmt");}
-	| LLCONTINUE anchor
-	{puts("innerstmt");}
+	{pushp("innerstmt"); addstmt();} decl
+	| {pushp("innerstmt"); addstmt();} expr
+	| {pushp("innerstmt"); addstmt();} LLIF cond block elseif endif
+	| {pushp("innerstmt"); addstmt();} LLWHILE cond optanchor block
+	| {pushp("innerstmt"); addstmt();} LLRET expr
+	| {pushp("innerstmt"); addstmt();} LLSTRUCT LLID block
+	| {pushp("innerstmt"); addstmt();} LLUNION LLID block
+	| {pushp("innerstmt"); addstmt();} LLBREAK anchor
+	| {pushp("innerstmt"); addstmt();} LLCONTINUE anchor
 ;
 
 optanchor : 
+	{pushp("opanchor");}
 	LLCLN LLID
-	{puts("opanchor");}
-	|
+	| {pushp("opanchor-e");}
 ;
 
-anchor : 
+anchor :
+	{pushp("anchor");}
 	LLID
-	{puts("anchor");}
-	|
+	| {pushp("anchor-e");}
 ;
 
 block : 
+	{pushp("block");}
 	LLLBRAC morestmts endblock
-	{puts("block");}
 ;
 
 endblock : 
+	{pushp("endblock");}
 	LLRBRAC
-	{puts("endblock");}
 ;
 
 decl : 
+	{pushp("decl");}
 	LLTYPE moredecl anotherdecl
-	{puts("decl");}
 ;
 
 moredecl : 
+	{pushp("moredecl");}
 	ptr declname funcdel enddecl
-	{puts("moredecl");}
 ;
 
 ptr : 
+	{pushp("ptr");}
 	LLSTAR ptr
-	{puts("ptr");}
-	|
+	| {pushp("ptr-e");}
 ;
 
 funcdel : 
+	{pushp("funcdel");}
 	nocallfunc LLLPAR args endargs fwddecl
-	{puts("funcdel");}
-	|
+	| {pushp("funcdel-e");}
 ;
 
 nocallfunc :
+	{pushp("nocallfunc");}
 	LLDLRSGN
-	{puts("nocallfunc");}
-	|
+	| {pushp("nocallfunc-e");}
 ;
 
 args : 
+	{pushp("args");}
 	decl
-	{puts("args");}
-	|
+	| {pushp("args-e");}
 ;
 
-fwddecl : 
+fwddecl :
+	{pushp("fwddecl");}
 	block
-	{puts("fwddecl");}
-	|
+	| {pushp("fwddecl-e");}
 ;
 
 endargs : 
+	{pushp("endargs");}
 	LLRPAR
-	{puts("endargs");}
 ;
 
 declname : 
+	{pushp("declname");}
 	LLID
-	{puts("declname");}
 ;
 
 enddecl : 
+	{pushp("enddecl");}
 	arr assign
-	{puts("enddecl");}
 ;
 
 assign : 
+	{pushp("assign");}
 	LLASSIGN expr
-	{puts("assign");}
-	|
+	| {pushp("assign-e");}
 ;
 
 arr :
+	{pushp("arr");}
 	LLLSRQ LLINT morearr
-	{puts("arr");}
-	|
+	| {pushp("arr-e");}
 ;
 
 morearr : 
+	{pushp("morearr");}
 	LLCOMMA LLINT morearr
-	{puts("morearr");}
-	| LLRSRQ
-	{puts("morearr");}
+	| {pushp("morearr-end");} LLRSRQ
 ;
 
 anotherdecl : 
+	{pushp("anotherdecl");}
 	LLCOMMA decl
-	{puts("anotherdecl");}
-	|
+	| {pushp("anotherdecl-e");}
 ;
 
 cond : 
+	{pushp("cond");}
 	LLLPAR expr endcond
-	{puts("cond");}
 ;
 
 endcond : 
+	{pushp("endcond");}
 	LLRPAR
-	{puts("endcond");}
 ;
 
 elseif : 
+	{pushp("elseif");}
 	LLELIF cond block elseif
-	{puts("elseif");}
-	|
+	| {pushp("elseif-e");}
 ;
 
 endif : 
+	{pushp("endif");}
 	LLELSE block
-	{puts("endif");}
-	|
+	| {pushp("endif-e");}
 ;
 
 expr : 
+	{pushp("expr");}
 	term more
-	{puts("expr");}
-	| LLLPAR expr moreparens more
-	{puts("expr");}
+	| {pushp("expr");} LLLPAR expr moreparens more
 ;
 
 moreparens : 
+	{pushp("moreparens");}
 	LLRPAR
-	{puts("moreparens");}
 ;
 
 
 more :
+	{pushp("more");}
 	binop expr
-	{puts("more");}
-	| 
-	{puts("more");}
+	| {pushp("more-e");}
 ;
 
 term :
+	{pushp("term");}
 	unop term
-	{puts("term");}
-	| name expr2
-	{puts("term");}
+	| {pushp("term");} name expr2
 ;
 
 name : 
+	{pushp("name");}
 	LLID
-	{puts("name");}
-	| LLINT
-	{puts("name");}
-	| LLFLOAT
-	{puts("name");}
-	| LLCHAR
-	{puts("name");}
+	| {pushp("name");} LLINT
+	| {pushp("name");} LLFLOAT
+	| {pushp("name");} LLCHAR
 ;
 
 expr2 : 
+	{pushp("expr2");}
 	arrexpr expr2
-	{puts("expr2");}
-	| funcall expr2
-	{puts("expr2");}
-	| structcall expr2
-	{puts("expr2");}
-	|
+	| {pushp("expr2");} funcall expr2
+	| {pushp("expr2");} structcall expr2
+	| {pushp("expr2-e");}
 ;
 
 funcall : 
+	{pushp("funcall");}
 	LLLPAR expr morecall
-	{puts("funcall");}
 ;
 
 morecall : 
 	LLCOMMA expr morecall
-	{puts("morecall");}
+	{pushp("morecall");}
 	| LLRPAR
-	{puts("morecall");}
+	{pushp("morecall");}
 ;
 
 structcall :
+	{pushp("structcall");}
 	LLPERIOD LLID
-	{puts("structcall");}
-	| LLARROW LLID
-	{puts("structcall");}
+	| {pushp("structcall");} LLARROW LLID
 ;
 
 arrexpr :
+	{pushp("arrexpr");}
 	LLLSRQ expr endarr
-	{puts("arrexpr");}
 ;
 
 endarr :
+	{pushp("endarr");}
 	LLCOMMA expr endarr
-	{puts("endarr");}
-	| LLRSRQ
-	{puts("endarr");}
+	| {pushp("endarr-end");} LLRSRQ
 ;
 
 unop : 
+	{pushp("unop");}
 	LLAMP
-	{puts("unop");}
-	| LLSTAR
-	{puts("unop");}
-	| LLEXCL
-	{puts("unop");}
-	| LLTILDE
-	{puts("unop");}
-	| cast
-	{puts("unop");}
+	| {pushp("unop");} LLSTAR
+	| {pushp("unop");} LLEXCL
+	| {pushp("unop");} LLTILDE
+	| {pushp("unop");} cast
 ;
 
 cast : 
+	{pushp("cast");}
 	casttype morecast
-	{puts("cast");}
 ;
 
 casttype :
+	{pushp("casttype");}
 	LLCASTS
-	{puts("casttype");}
-	| LLCASTZ
-	{puts("casttype");}
-	| LLCASTO
-	{puts("casttype");}
+	| {pushp("casttype");} LLCASTZ
+	| {pushp("casttype");} LLCASTO
 ;
 
 morecast : 
+	{pushp("morecast");}
 	LLLPAR endcast
-	{puts("morecast");}
 ;
 
 endcast :
+	{pushp("endcast");}
 	LLTYPE ptr moreparens
-	{puts("endcast");}
 ;
 
 binop :
+	{pushp("minus");}
 	LLMINUS
-	{puts("minus");}
-	| LLPLUS
-	{puts("plus");}
-	| LLDIV
-	| LLSTAR
-	| LLOR
-	| LLAND
-	| LLXOR
-	| LLPIPE
-	| LLAMP
-	| LLCARET
-	| LLRSHFT
-	| LLLSHFT
-	| LLRROT
-	| LLLROT
-	| LLEQ
-	| LLGT
-	| LLGE
-	| LLLT
-	| LLLE
-	| LLNE
-	| LLMOD
-	| LLASSIGN
-	{puts("assign");}
+	| {pushp("plus");} LLPLUS
+	| {pushp("div");} LLDIV
+	| {pushp("star");} LLSTAR
+	| {pushp("or");} LLOR
+	| {pushp("and");} LLAND
+	| {pushp("xor");} LLXOR
+	| {pushp("pipe");} LLPIPE
+	| {pushp("amp");} LLAMP
+	| {pushp("caret");} LLCARET
+	| {pushp("rshift");} LLRSHFT
+	| {pushp("lshift");} LLLSHFT
+	| {pushp("rrotate");} LLRROT
+	| {pushp("lrotate");} LLLROT
+	| {pushp("eq");} LLEQ
+	| {pushp("gt");} LLGT
+	| {pushp("ge");} LLGE
+	| {pushp("lt");} LLLT
+	| {pushp("le");} LLLE
+	| {pushp("ne");} LLNE
+	| {pushp("mod");} LLMOD
+	| {pushp("assign");} LLASSIGN
 ;
