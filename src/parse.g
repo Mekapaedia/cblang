@@ -3,23 +3,48 @@
 %options "generate-lexer-wrapper generate-llmessage generate-symbol-table";
 %top {
 #include "cbc.h"
+
+parsed *curr = &PARSETREE;
+
+void pushp(const char* str);
+void pushparse(void);
+void popparse(void);
+
 void pushp(const char* str) 
 {
 	puts(str);
 	fflush(stdout);
 }
 
-void addstmt(void) 
+void pushparse(void)
 {
-	AST.stmts = realloc(AST.stmts, sizeof(struct _syntax) * (AST.numstmts+1));
-	if(AST.stmts == NULL)
+	parsed *new = malloc(sizeof(struct _parsed));
+	if(new == NULL)
 	{
-		perror("Error allocating memory");
+		perror(MEMALLOCERR);
+		return;
 	}
-	AST.stmts[AST.numstmts].stmts = NULL;
-	AST.stmts[AST.numstmts].numstmts = 0;
-	AST.numstmts++;
+	new->parent = curr;
+	new->lexeme = CURRLEX;
+	new->numchildren = 0;
+	new->children = NULL;
+	printf("%lu\n", sizeof(struct _parsed**) * (size_t) (curr->numchildren + 1));
+	curr->children = realloc(curr->children, sizeof(struct _parsed**) * (size_t) (curr->numchildren + 1));
+	if(curr->children == NULL)
+	{
+		perror(MEMALLOCERR);
+		return;
+	}
+	curr->children[curr->numchildren] = new;
+	curr->numchildren++;
+	curr = new;
 }
+
+void popparse(void)
+{
+	curr = curr->parent;
+}
+
 
 }
 
@@ -46,64 +71,55 @@ endstmt :
 ;
 
 innerstmt : 
-	{pushp("innerstmt"); addstmt();} decl
-	| {pushp("innerstmt"); addstmt();} expr
-	| {pushp("innerstmt"); addstmt();} LLIF cond block elseif endif
-	| {pushp("innerstmt"); addstmt();} LLWHILE cond optanchor block
-	| {pushp("innerstmt"); addstmt();} LLRET expr
-	| {pushp("innerstmt"); addstmt();} LLSTRUCT LLID block
-	| {pushp("innerstmt"); addstmt();} LLUNION LLID block
-	| {pushp("innerstmt"); addstmt();} LLBREAK anchor
-	| {pushp("innerstmt"); addstmt();} LLCONTINUE anchor
+	{pushp("innerstmt"); pushparse();} decl {popparse();}
+	| {pushp("innerstmt"); pushparse();} expr {popparse();}
+	| {pushp("innerstmt"); pushparse();} LLIF cond block elseif endif {popparse();}
+	| {pushp("innerstmt"); pushparse();} LLWHILE cond optanchor block {popparse();}
+	| {pushp("innerstmt"); pushparse();} LLRET expr {popparse();}
+	| {pushp("innerstmt"); pushparse();} LLSTRUCT LLID block {popparse();}
+	| {pushp("innerstmt"); pushparse();} LLUNION LLID block {popparse();}
+	| {pushp("innerstmt"); pushparse();} LLBREAK anchor {popparse();}
+	| {pushp("innerstmt"); pushparse();} LLCONTINUE anchor {popparse();}
 ;
 
 optanchor : 
-	{pushp("opanchor");}
-	LLCLN LLID
+	{pushp("opanchor"); pushparse();} LLCLN LLID {popparse();}
 	| {pushp("opanchor-e");}
 ;
 
 anchor :
-	{pushp("anchor");}
-	LLID
+	{pushp("anchor"); pushparse();} LLID {popparse();}
 	| {pushp("anchor-e");}
 ;
 
 block : 
-	{pushp("block");}
-	LLLBRAC morestmts endblock
+	{pushp("block"); pushparse();} LLLBRAC morestmts endblock {popparse();}
 ;
 
 endblock : 
-	{pushp("endblock");}
-	LLRBRAC
+	{pushp("endblock");} LLRBRAC
 ;
 
 decl : 
-	{pushp("decl");}
-	LLTYPE moredecl anotherdecl
+	{pushp("decl");} LLTYPE moredecl anotherdecl
 ;
 
 moredecl : 
-	{pushp("moredecl");}
-	ptr declname funcdel enddecl
+	{pushp("moredecl"); pushparse();} ptr declname funcdel enddecl {popparse();}
 ;
 
 ptr : 
-	{pushp("ptr");}
-	LLSTAR ptr
+	{pushp("ptr"); pushparse();} LLSTAR ptr {popparse();}
 	| {pushp("ptr-e");}
 ;
 
 funcdel : 
-	{pushp("funcdel");}
-	nocallfunc LLLPAR args endargs fwddecl
+	{pushp("funcdel");} nocallfunc LLLPAR args endargs fwddecl
 	| {pushp("funcdel-e");}
 ;
 
 nocallfunc :
-	{pushp("nocallfunc");}
-	LLDLRSGN
+	{pushp("nocallfunc"); pushparse();} LLDLRSGN {popparse();}
 	| {pushp("nocallfunc-e");}
 ;
 
@@ -114,8 +130,7 @@ args :
 ;
 
 fwddecl :
-	{pushp("fwddecl");}
-	block
+	{pushp("fwddecl");} block
 	| {pushp("fwddecl-e");}
 ;
 
@@ -130,13 +145,11 @@ declname :
 ;
 
 enddecl : 
-	{pushp("enddecl");}
-	arr assign
+	{pushp("enddecl"); pushparse();} arr assign {popparse();}
 ;
 
 assign : 
-	{pushp("assign");}
-	LLASSIGN expr
+	{pushp("assign"); pushparse();} LLASSIGN expr {popparse();}
 	| {pushp("assign-e");}
 ;
 
@@ -181,9 +194,8 @@ endif :
 ;
 
 expr : 
-	{pushp("expr");}
-	term more
-	| {pushp("expr");} LLLPAR expr moreparens more
+	{pushp("expr");pushparse();} term more {popparse();}
+	| {pushp("expr"); pushparse();} LLLPAR expr moreparens more {popparse();}
 ;
 
 moreparens : 

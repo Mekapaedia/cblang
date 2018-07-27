@@ -2,7 +2,8 @@
 
 lexed *LEXLIST;
 int LEXPOS = 0;
-syntax AST;
+parsed PARSETREE;
+lexed *CURRLEX = NULL;
 
 int main(int argc, char **argv) 
 {
@@ -44,7 +45,7 @@ int main(int argc, char **argv)
 			memset(buf, '\0', sizeof(char)*filesize + 1);
 			if(buf == NULL)
 			{
-				perror("Memory allocation error");
+				perror(MEMALLOCERR);
 				return 1;
 			}
 			
@@ -61,7 +62,7 @@ int main(int argc, char **argv)
 			lexedlist = malloc(sizeof(lexed)*filesize);
 			if(lexedlist == NULL)
 			{
-				perror("Memory allocation error");
+				perror(MEMALLOCERR);
 				return 1;
 			}
 
@@ -76,11 +77,18 @@ int main(int argc, char **argv)
 			}
 
 			LEXLIST = lexedlist;
-			AST.stmts = malloc(sizeof(syntax));
-			AST.numstmts = 0;
+			PARSETREE.children = malloc(sizeof(struct _parsed**));
+			PARSETREE.lexeme = malloc(sizeof(struct _parsed*));
+			if(PARSETREE.lexeme == NULL)
+			{
+				perror(MEMALLOCERR);
+				return 1;
+			}
+			PARSETREE.lexeme->lexeme = ROOT;
+			PARSETREE.numchildren = 0;
 			parser();
 			puts("");
-			astprint(&AST, 0);
+			parseprint(&PARSETREE, 0);
 			free(lexedlist);
 		}
 		else
@@ -111,7 +119,11 @@ void ver(void)
 
 void lexprint(lexed *lexeme)
 {
-	if(lexeme->lexeme == UNKNOWN)
+	if(lexeme == NULL)
+	{
+		puts("ERR: NULL");
+	}
+	else if(lexeme->lexeme == UNKNOWN)
 	{
 		puts("ERR: UNKNOWN");
 	}
@@ -411,7 +423,7 @@ void lexprint(lexed *lexeme)
 
 int yylex(void)
 {
-	lexprint(&LEXLIST[LEXPOS]);
+	CURRLEX = &LEXLIST[LEXPOS];
 	if(LEXLIST[LEXPOS].lexeme == EOTEXT)
 	{
 		return 0;
@@ -423,20 +435,24 @@ int yylex(void)
 	return -1;
 }
 
-void astprint(syntax *stmt, int tab)
+void parseprint(parsed *stmt, int tab)
 {
 	int i = 0;
+	if(stmt == NULL)
+	{
+		return;
+	}
 	for(i = 0; i < tab; i++)
 	{
-		printf("\t");
+		printf("  ");
 	}
-	puts("stmt");
-	if(stmt->stmts != NULL)
+	lexprint(stmt->lexeme);
+	if(stmt->children != NULL)
 	{
 		int j = 0;
-		for(j = 0; j < stmt->numstmts; j++)
+		for(j = 0; j < stmt->numchildren; j++)
 		{
-			astprint(&stmt->stmts[j], tab+1);
+			parseprint(stmt->children[j], tab+1);
 		}
 	}
 }

@@ -24,7 +24,7 @@ int lex(lexed *lexlist, char *input, size_t inputlen)
 	SPECIALTYPELIST = malloc(sizeof(char *) * 1);
 	if(SPECIALTYPELIST == NULL)
 	{
-		perror("Memory allocation error");
+		perror(MEMALLOCERR);
 		return -1;
 	}
 	for(i = 0; i < inputlen; i++)
@@ -35,7 +35,6 @@ int lex(lexed *lexlist, char *input, size_t inputlen)
 		lexlist[lexnum].typesize = -1;
 		lexlist[lexnum].ptrlvl = -1;
 		lexlist[lexnum].idname = NULL;
-		lexlist[lexnum].idtag = -1;
 		lexlist[lexnum].val.strval = NULL;
 		lexlist[lexnum].signedness = -1;
 		lexlist[lexnum].fracsize = -1;
@@ -160,7 +159,7 @@ char *convstrgen(const char *YYSTART, const char *YYCURSOR, char trim)
 	convstr = malloc(sizeof(char)*(size_t)(YYCURSOR-YYSTART+1));
 	if(convstr == NULL)
 	{
-		perror("Error allocating memory");
+		perror(MEMALLOCERR);
 		return NULL;
 	}
 	if(trim == 2)
@@ -244,7 +243,7 @@ void getid(lexed *lexeme, const char *YYSTART, const char *YYCURSOR)
 		SPECIALTYPELIST = realloc(SPECIALTYPELIST, sizeof(char *) * (SPECIALTYPENUM + 1));
 		if(SPECIALTYPELIST == NULL)
 		{
-			perror("Memory allocation error");
+			perror(MEMALLOCERR);
 			return;
 		}
 		SPECIALTYPENUM++;

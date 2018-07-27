@@ -8,6 +8,8 @@
 #define FSIZE 32
 #define CSIZE 8
 
+#define MEMALLOCERR "Memory allocation error"
+
 #include <stdio.h>
 #include <string.h>
 #include <libgen.h>
@@ -70,6 +72,7 @@ enum lexemes
 	DLRSGN,
 	BREAK,
 	CONTINUE,
+	ROOT,
 	NONE,
 	UNKNOWN	
 };
@@ -106,28 +109,30 @@ typedef struct _lexed
 	int type;
 	int typesize;
 	int fracsize;
-	int ptrlvl;
 	char *idname;
-	int idtag;
 	idval val;
 	char signedness;
+	int ptrlvl;
 	int line;
 	int character;
 } lexed;
 
-typedef struct _syntax
+typedef struct _parsed
 {
-	struct _syntax *stmts;
-	int numstmts;
-} syntax;
+	lexed *lexeme;
+	struct _parsed *parent;
+	int numchildren;
+	struct _parsed **children;
+} parsed;
 
 void help(const char *name);
 void ver(void);
 int lex(lexed *lexlist, char *input, size_t inputlen);
 void lexprint(lexed *lexeme);
 int yylex(void);
-void astprint(syntax *stmt, int tab);
+void parseprint(parsed *stmt, int tab);
 
-extern syntax AST;
+extern parsed PARSETREE;
+extern lexed *CURRLEX;
 
 #endif /* _CBC_H_ */
