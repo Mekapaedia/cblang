@@ -77,7 +77,7 @@ int main(int argc, char **argv)
 			}
 
 			LEXLIST = lexedlist;
-			PARSETREE.children = malloc(sizeof(struct _parsed**));
+			PARSETREE.children = NULL;
 			PARSETREE.lexeme = malloc(sizeof(struct _parsed*));
 			if(PARSETREE.lexeme == NULL)
 			{
