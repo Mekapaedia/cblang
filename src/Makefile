@@ -17,7 +17,7 @@ debug: phony
 
 clean:
 	rm -rf *.gcno *.gcda *.gcov $(SRC:.c=.o)
-	rm -rf $(EXE) ../$(EXE) *.dyn *.dpi *.lock *.stackdump *.db lex.c parse.c parse.h
+	rm -rf $(EXE) ../$(EXE) *.dyn *.dpi *.lock *.stackdump *.db lex.c parse.c parse.h gmon.out
 
 phony: 
 	true

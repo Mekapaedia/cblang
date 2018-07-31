@@ -120,6 +120,16 @@ typedef struct _lexed
 typedef struct _parsed
 {
 	lexed *lexeme;
+	int syntax;
+	idval val;
+	int type;
+	int typesize;
+	int fracsize;
+	int ptrlvl;
+	char signedness;
+	char *idname;
+	int line;
+	int character;
 	struct _parsed *parent;
 	int numchildren;
 	struct _parsed **children;
